@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 require('dotenv').config()
-const {User, createUser} = require('./models/models')
+const createUserPersona = require('./models/models')
+const User = require('./schemas/user')
 
 const uri = `mongodb://${process.env.LOCALHOST}:${process.env.PORT_DB}/${process.env.DB_NAME}`
 
@@ -11,23 +12,20 @@ db.once('open', () => {
 	console.log('connected to mongodb')
 })
 
+
 async function runClient() {
 	try {
 		await mongoose.connect(uri, {
 			useNewUrlParser: true,
 			useUnifiedTopology: true,
 		})
-		await createUser()
-		await User.find({})
+		// await createUserPersona()
 	} catch(err) {
 		console.error(err)
-	} finally {
-		mongoose.connection.close(console.log('disconneced from mongodb'))
 	}
 }
 
-runClient()
-
+module.exports = runClient
 
 // const client = new MongoClient(uri)
 // const dbName = "sample_input"

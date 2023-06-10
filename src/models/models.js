@@ -1,56 +1,68 @@
-const mongoose = require('mongoose')
-const crypto = require('crypto')
 require('dotenv').config()
+const GoalType = require('../schemas/goalType')
+const Reminder = require('../schemas/reminder')
+const PersonalGoal = require('../schemas/personalGoal')
+const {User, UserCredentials} = require('../schemas/user')
 
-const {
-  goalTypeSchema, 
-  reminderSchema, 
-  personalGoalSchema, 
-  userSchema
-} = require('../schemas/schema')
-const dateInFiveMonths = require('../utils/date')
+const mongoose = require('mongoose')
 
-const generateHashedPassword = require('../utils/randomHash')
-
-const password = process.env.PASSWORD
-const salt = crypto.randomBytes(16).toString('hex')
-
-const GoalType = mongoose.model('GoalType', goalTypeSchema)
-const Reminder = mongoose.model('Reminder', reminderSchema)
-const PersonalGoal = mongoose.model('PersonalGoal', personalGoalSchema)
-const User = mongoose.model('User', userSchema)
-
-async function createUser() {
-  const fitnessCategory = new GoalType({
-    id: 1,
-    name: 'idioms',
-  })
-  
+async function createReminders() {
   const reminder = new Reminder({
-    weekly: true,
+    _id: new mongoose.Types.ObjectId(),
   })
-  
-  const personalGoal = new PersonalGoal({
-    title: 'Gain 200pound in six months',
-    description: 'Give my best to finished my bulk fase with more that 200 pounds in gains, yikes!',
-    goal_type: fitnessCategory,
-    end_date_goal: dateInFiveMonths,
-    reminder_type: reminder
-  })
-  
-  const userJhon = new User({
-    name: 'Jessey',
-    avatar: 'https://placeimg.com/640/480/any?r=0.9178516507833745',
-    email: 'jesseey@gmail.com',
-    password: generateHashedPassword(password, salt),
-    streak_count: 0,
-    goal_info: personalGoal
-  })
-  
-  await fitnessCategory.save()
-  await reminder.save()
-  await personalGoal.save()
-  await userJhon.save()
+  return await reminder.save()
 }
 
-module.exports = {User, createUser}
+async function createGoalType(name) {
+  const category = new GoalType({
+    _id: new mongoose.Types.ObjectId(),
+    id: 0,
+    name: name,
+  })
+  return await category.save()
+}
+
+async function createPersonalGoal(titleName, description, CategoryId, endDate, reminderId) {
+  const personalGoal = new PersonalGoal({
+    _id: new mongoose.Types.ObjectId(),
+    title: titleName,
+    description: description,
+    goal_type: CategoryId,
+    end_date_goal: endDate,
+    reminder_type: reminderId
+  })
+  return await personalGoal.save()
+}
+
+async function createUser(name, avatar, email, password, personalGoalId) {
+  const user = new User({
+    _id: new mongoose.Types.ObjectId(),
+    name: name,
+    avatar: avatar,
+    email: email,
+    password: password,
+    streak_count: 0,
+    goal_info: personalGoalId
+  })
+
+  return await user.save()
+}
+
+async function createUserCredentials(username, password) {
+  const userCredentials = new UserCredentials({
+    _id: new mongoose.Types.ObjectId,
+    username: username,
+    password: password,
+  })
+  return await userCredentials.save()
+}
+
+async function createUserPersona() {
+  const savedReminder = await createReminders()
+  const savedGoalType = await createGoalType()
+  const savedPersonalGoal = await createPersonalGoal(savedGoalType._id, savedReminder._id)
+  const savedUser = await createUser(savedPersonalGoal._id)
+  return savedUser
+}
+
+module.exports = {createUserPersona, createUserCredentials}

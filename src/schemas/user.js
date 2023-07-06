@@ -19,7 +19,13 @@ const userCredentialsSchema = new Schema({
   password: {type: String, required: true}
 }, {collection: 'user_credentials'})
 
+const userStoreSessionSchema = new Schema({
+  id: Schema.Types.ObjectId,
+  username: String
+})
+
 const User = mongoose.model('User', userSchema)
 const UserCredentials = mongoose.model('User_credentials', userCredentialsSchema)
+const UserStoreSession = mongoose.model('UserStoreSession', userStoreSessionSchema)
 
-module.exports = {User, UserCredentials}
+module.exports = { User, UserCredentials, UserStoreSession }

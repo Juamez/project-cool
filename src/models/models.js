@@ -22,9 +22,10 @@ async function createGoalType(name) {
   return await category.save()
 }
 
-async function createPersonalGoal(titleName, description, CategoryId, endDate, reminderId) {
+async function createPersonalGoal(userId, titleName, description, CategoryId, endDate, reminderId) {
   const personalGoal = new PersonalGoal({
     _id: new mongoose.Types.ObjectId(),
+    owner_id: userId,
     title: titleName,
     description: description,
     goal_type: CategoryId,
@@ -65,4 +66,4 @@ async function createUserPersona() {
   return savedUser
 }
 
-module.exports = {createUserPersona, createUserCredentials}
+module.exports = {createUserPersona, createUserCredentials, createPersonalGoal}

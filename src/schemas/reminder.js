@@ -7,8 +7,8 @@ const reminderSchema = new Schema({
     type: String,
     required: true,
     unique: true,
-    enum: ["Daily", "Weekly", "Monthly"],
-    default: "Daily",
+    enum: ["daily", "weekly", "monthly"],
+    default: "daily",
   },
 })
 

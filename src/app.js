@@ -20,23 +20,20 @@ const storeSession = new MongoDBStore({
   return console.error(err)
 })
 
-app.use(cookieParser())
 app.use(cors())
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({extended: false}))
+app.use(cookieParser())
 
 app.use(session({
   secret: 'secret_key',
-  cookie: {
-    maxAge: 1000 * 60 * 60 * 24 * 7
-  },
   resave: false, 
   saveUninitialized: false,
   store: storeSession,
 }))
 
-app.use(passport.authenticate('session'))
-
+app.use(passport.initialize())
+app.use(passport.session())
 
 app.use('/', authRouter)
 app.use('/', indexRouter)

@@ -2,7 +2,6 @@ const express = require('express')
 const passport = require('passport')
 const LocalStrategy = require('passport-local')
 const bcrypt = require('bcrypt')
-const crypto = require('crypto')
 const mongoose = require('mongoose')
 const { createUserCredentials } = require('../models/models')
 
@@ -30,15 +29,15 @@ db.once('open', () => {
 	console.log('connected to mongodb in auth')
 })
 
-passport.use(
-  new LocalStrategy(async function verify (username, password, done) {
+passport.use('local', new LocalStrategy(async (username, password, done) => {
+    console.log("user value inside strategy", username)
+    console.log("password value inside startegy", password)
     try {
         const user = await db.collection("user_credentials").findOne({ username: username })
         if(!user) return done(null,false, { message: 'Incorrect username.' })
 
         const isPasswordValid = await bcrypt.compare(password, user.password)
         if(!isPasswordValid) return done(null, false, { message: 'Incorrect password'})
-
         return done(null, user)
     } catch(error) {
       return done(error)
@@ -47,22 +46,19 @@ passport.use(
 )
 
 passport.serializeUser((user, done) => {
-  process.nextTick(() => {
-    return done(null, {id: user._id, username: user.username})
-  })
+    console.log("user value inside serialize", user, user._id)
+    return done(null, user._id)
 })
 
-passport.deserializeUser((user, done) => {
-  process.nextTick(() => {
-    return done(null, user);
-  });
+passport.deserializeUser((id, done) => {
+  console.log(id)
+  (async () => {
+    const user = await db.collection("user_credentials").findOne({_id: id})
+    return done(null, user)
+  })()
 })
 
 const router = express.Router()
-
-router.get('/login', (req, res, next) => {
-  res.json({name: 'login', "session": req.session})
-})
 
 router.post('/login/password', passport.authenticate('local'), (req, res, next) => {
     const user = {
@@ -75,15 +71,15 @@ router.post('/login/password', passport.authenticate('local'), (req, res, next) 
   }
 )
 
-router.get('/logout', (req, res, next) => {
-  res.json({"session": req.session})
+router.get('/know', (req, res, next) => {
+  res.json({"session": req.session, info: req.session.user})
 })
 
 router.post('/logout', passport.authenticate('session'), (req, res, next) => {
   req.logout(async (err) => {
     if (err) { return next(err)}
     req.session.destroy()
-    const deleteSession = await db.collection("user_store_session").deleteOne({"session.passport.user.username": "alice"}) 
+    const deleteSession = await db.collection("user_store_session").deleteMany({"session.passport.user.username": "alice"})
     return deleteSession
   })
   res.end()
@@ -93,7 +89,7 @@ router.get('/signup', (req, res, next) => {
   res.json({message: 'signup'})
 })
 
-router.post('/signup', passport.initialize(), async (req, res, next) => {
+router.post('/signup', async (req, res, next) => {
   try {
     const {username, password} = req.body
     const salt = await bcrypt.genSalt(10)
@@ -114,12 +110,22 @@ router.get('/session', passport.authenticate('session'), async (req, res, next) 
   try {
     const session = await db.collection("user_store_session").findOne({"session.passport.user.username": "alice"})
     if(!session) return next(null, false, {message: "not session was found"})
-
-    res.json({ "session": session })
+    res.json({ "session": session, cookies: req.cookies, "session-req" : req.session, isAuth: req.isAuthenticated()})
     return next(null, session)
   } catch (err) {
     console.error("method get from session gave an error", err)
   }
+})
+
+router.get('/login', (req, res, next) => {
+  res.json({
+    name: 'login', 
+    session: req.session,
+    cookies: req.cookies,
+    a: req.isAuthenticated(),
+    username: req.username
+  })
+  console.log("user_exist", req.username)
 })
 
 module.exports = router
